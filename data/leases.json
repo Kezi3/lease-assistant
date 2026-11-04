@@ -1,0 +1,5 @@
+[
+  {"property": "Unit A, Wuse 2", "tenant": "Tenant 1", "expires": "2026-12-15"},
+  {"property": "Unit B, Garki", "tenant": "Tenant 2", "expires": "2027-06-30"},
+  {"property": "Unit C, Maitama", "tenant": "Tenant 3", "expires": "2027-01-10"}
+]

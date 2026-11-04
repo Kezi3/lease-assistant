@@ -1,30 +1,68 @@
 import json
-from datetime import date
+import re
+from datetime import date, datetime, timedelta
+from pathlib import Path
+
 from anthropic import Anthropic
 from dotenv import load_dotenv
+from pydantic import BaseModel
 
 load_dotenv()
-client = Anthropic()
 
-LEASES = [
-    {"property": "Unit A, Wuse 2", "tenant": "Tenant 1", "expires": "2026-12-15"},
-    {"property": "Unit B, Garki", "tenant": "Tenant 2", "expires": "2027-06-30"},
-    {"property": "Unit C, Maitama", "tenant": "Tenant 3", "expires": "2027-01-10"},
-]
+MODEL = "claude-sonnet-5-5"
+DATA_FILE = Path(__file__).parent / "data" / "leases.json"
 
-def ask(question: str) -> dict:
+
+class Lease(BaseModel):
+    property: str
+    tenant: str
+    expires: str
+
+
+class Answer(BaseModel):
+    answer: str
+    leases: list[Lease]
+
+
+def load_leases(path: Path = DATA_FILE) -> list[dict]:
+    return json.loads(path.read_text())
+
+
+def leases_expiring_within(leases: list[dict], today: date, days: int) -> list[dict]:
+    """Ground truth for 'expires in the next N days', computed in code, not by the model."""
+    end = today + timedelta(days=days)
+    return [
+        lease
+        for lease in leases
+        if today <= datetime.strptime(lease["expires"], "%Y-%m-%d").date() <= end
+    ]
+
+
+def parse_answer(text: str) -> Answer:
+    """Parse the model's reply into an Answer. Tolerates code fences; fails loudly otherwise."""
+    cleaned = re.sub(r"^```(?:json)?\s*|\s*```$", "", text.strip())
+    try:
+        return Answer.model_validate_json(cleaned)
+    except ValueError as err:
+        raise ValueError(f"Model reply was not valid Answer JSON: {err}\nReply was: {text!r}") from err
+
+
+def ask(question: str, today: date | None = None, client: Anthropic | None = None) -> Answer:
+    today = today or date.today()
+    client = client or Anthropic()
     prompt = (
-        f"Today is {date.today().isoformat()}. Here are the leases: {json.dumps(LEASES)}\n"
+        f"Today is {today.isoformat()}. Here are the leases: {json.dumps(load_leases())}\n"
         f"Question: {question}\n"
-        'Reply with JSON only, shaped like {"answer": str, "leases": [ ... ]}.'
+        'Reply with JSON only, shaped like {"answer": str, "leases": [{"property": str, "tenant": str, "expires": str}]}.'
     )
     reply = client.messages.create(
-        model="claude-sonnet-5-5",
+        model=MODEL,
         max_tokens=2000,
         messages=[{"role": "user", "content": prompt}],
     )
     text = next(b.text for b in reply.content if b.type == "text")
-    return json.loads(text)
+    return parse_answer(text)
+
 
 if __name__ == "__main__":
-    print(json.dumps(ask("Which leases expire in the next 90 days?"), indent=2))
+    print(ask("Which leases expire in the next 90 days?").model_dump_json(indent=2))
