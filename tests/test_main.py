@@ -1,3 +1,4 @@
+import json
 import sys
 from datetime import date
 from pathlib import Path
@@ -16,9 +17,16 @@ def properties(items) -> set[str]:
     return {item["property"] if isinstance(item, dict) else item.property for item in items}
 
 
+THREE_LEASES = [
+    {"property": "Unit A, Wuse 2", "tenant": "Tenant 1", "expires": "2026-12-15"},
+    {"property": "Unit B, Garki", "tenant": "Tenant 2", "expires": "2027-06-30"},
+    {"property": "Unit C, Maitama", "tenant": "Tenant 3", "expires": "2027-01-10"},
+]
+
+
 def test_90_day_ground_truth():
     """4 Nov 2026 + 90 days = 2 Feb 2027: Unit A (15 Dec) and Unit C (10 Jan) fall inside, Unit B does not."""
-    result = leases_expiring_within(load_leases(), TODAY, 90)
+    result = leases_expiring_within(THREE_LEASES, TODAY, 90)
     assert properties(result) == {"Unit A, Wuse 2", "Unit C, Maitama"}
 
 
@@ -66,13 +74,14 @@ class FakeClient:
 
 
 def test_ask_uses_injected_date_and_returns_validated_answer():
-    reply = (
-        '{"answer": "Two leases expire.", "leases": ['
-        '{"property": "Unit A, Wuse 2", "tenant": "Tenant 1", "expires": "2026-12-15"},'
-        '{"property": "Unit C, Maitama", "tenant": "Tenant 3", "expires": "2027-01-10"}]}'
+    expected = leases_expiring_within(load_leases(), TODAY, 90)
+    reply = json.dumps(
+        {
+            "answer": f"{len(expected)} leases expire.",
+            "leases": [{k: row[k] for k in ("property", "tenant", "expires")} for row in expected],
+        }
     )
     client = FakeClient(reply)
     out = ask("Which leases expire in the next 90 days?", today=TODAY, client=client)
     assert "2026-11-04" in client.last_prompt
-    expected = properties(leases_expiring_within(load_leases(), TODAY, 90))
-    assert properties(out.leases) == expected
+    assert properties(out.leases) == properties(expected)
