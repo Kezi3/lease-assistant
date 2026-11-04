@@ -1,16 +1,16 @@
 import json
 import re
-from datetime import date, datetime, timedelta
-from pathlib import Path
+from datetime import date
 
 from anthropic import Anthropic
 from dotenv import load_dotenv
 from pydantic import BaseModel
 
+from leases import DATA_FILE, leases_expiring_within, load_leases  # noqa: F401
+
 load_dotenv()
 
 MODEL = "claude-sonnet-5-5"
-DATA_FILE = Path(__file__).parent / "data" / "leases.json"
 
 
 class Lease(BaseModel):
@@ -22,20 +22,6 @@ class Lease(BaseModel):
 class Answer(BaseModel):
     answer: str
     leases: list[Lease]
-
-
-def load_leases(path: Path = DATA_FILE) -> list[dict]:
-    return json.loads(path.read_text())
-
-
-def leases_expiring_within(leases: list[dict], today: date, days: int) -> list[dict]:
-    """Ground truth for 'expires in the next N days', computed in code, not by the model."""
-    end = today + timedelta(days=days)
-    return [
-        lease
-        for lease in leases
-        if today <= datetime.strptime(lease["expires"], "%Y-%m-%d").date() <= end
-    ]
 
 
 def parse_answer(text: str) -> Answer:
