@@ -7,6 +7,7 @@ matches the JSON seed exactly.
 from __future__ import annotations
 
 import json
+import os
 import sqlite3
 from pathlib import Path
 
@@ -47,7 +48,8 @@ def seed(db_path: Path | None = None, json_path: Path | None = None) -> Path:
 
     Recreates the table on each run so a second call cannot leave stale rows.
     """
-    db_path = Path(db_path or DEFAULT_DB_PATH)
+    # Same lookup order as leases.resolve_db_path: argument, then $LEASES_DB, then the default.
+    db_path = Path(db_path or os.environ.get("LEASES_DB") or DEFAULT_DB_PATH)
     json_path = Path(json_path or JSON_SEED)
     rows = json.loads(json_path.read_text())
     db_path.parent.mkdir(parents=True, exist_ok=True)
