@@ -2,7 +2,7 @@
 
 An AI query assistant over lease records. Ask a question in plain English, for example "Which leases expire in the next 90 days?", and get a structured JSON answer from the Claude API.
 
-**Status:** Week 2 of a 6 week build. There is a CLI that sends a question and the records to Claude and validates the JSON that comes back, and a small read-only API over the records. The API and CLI read from SQLite; `data/leases.json` is the public seed. Next: tool use so Claude chooses which query to run (Week 3), and a scored test set (Week 4).
+**Status:** Week 3 of a 6 week build. There is a small read-only API over the records in SQLite, and an assistant (`assistant.py`) where Claude chooses which query to run using tool use. The older `main.py` CLI, which pastes every record into the prompt, is kept for comparison. Next: a scored test set (Week 4).
 
 ## Data
 
@@ -31,11 +31,35 @@ python seed_db.py                # builds data/leases.db from data/leases.json
 cp .env.example .env             # then put your Anthropic API key in .env
 ```
 
-## Ask a question (CLI)
+## Ask a question (tool use)
+
+```bash
+python assistant.py "Which leases expire in the next 90 days?"
+python assistant.py --trace "How many commercial leases have expired?"
+```
+
+`--trace` prints which tool Claude chose and what it got back, one line per call. This is the quickest way to see tool use working. Needs `ANTHROPIC_API_KEY` in `.env`; without it the SDK stops with "Could not resolve authentication method".
+
+How it works:
+
+1. We send the question and three tool definitions: `list_leases`, `get_lease` and `expiring_leases`.
+2. Claude replies with a final answer, or asks for a tool by name with arguments.
+3. If it asks for a tool, our code runs it (`run_tool`) and sends the result back.
+4. This repeats until Claude gives its final answer as JSON, or the step limit (6 model calls) is reached.
+
+Design decisions to know about:
+
+- **Date windows are calculated in code.** Claude passes `days` or an `end_date`; `leases.query_expiring_leases` does the arithmetic. Claude is told never to work out a window itself, which fixes the earlier problem of the model's own date arithmetic varying between runs.
+- **Claude's arguments are untrusted.** `run_tool` validates every argument. A bad argument or unknown lease id goes back to Claude as an error result so it can correct itself. A broken setup (for example a missing database) crashes loudly instead, because Claude cannot fix that.
+- **Tools only read.** There is no tool that changes data.
+
+## Ask a question (older CLI)
 
 ```bash
 python main.py
 ```
+
+Sends all records in the prompt and lets the model do the date arithmetic itself. Kept so the two approaches can be compared in Week 4.
 
 ## Run the API
 
@@ -58,6 +82,8 @@ pytest
 ```
 
 The tests never call the Claude API. They check the seeded SQLite data, the API endpoints, the date-window logic (including both edges), the JSON validation, and that `ask()` uses the date it is given. Each run builds a temporary database from `data/leases.json`.
+
+For tool use, `tests/test_assistant.py` runs the loop against a scripted stand-in for Claude, and `tests/test_assistant_sdk.py` runs it through the real Anthropic SDK with the HTTP layer replaced by a canned server. That proves the request and tool-result shapes are accepted by the SDK, but only a live run shows how Claude itself chooses tools.
 
 ## Accuracy
 
