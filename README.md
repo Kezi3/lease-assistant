@@ -18,6 +18,8 @@ python seed_db.py
 
 That writes `data/leases.db` (gitignored). Running the script twice drops and recreates the table so the database matches the JSON. The API and `load_leases()` read this database, not the JSON file directly. Tests seed a temporary `.db` and never use a committed database.
 
+To keep the database somewhere else, set `LEASES_DB` to a file path; both `seed_db.py` and the API honour it. If the database has not been built, the API answers `503` with the message "Build it with: python seed_db.py" instead of crashing.
+
 ## Setup
 
 ```bash

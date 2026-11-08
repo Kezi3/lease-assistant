@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import sqlite3
+from contextlib import closing
 from datetime import date, datetime, timedelta
 from pathlib import Path
 
@@ -24,7 +25,15 @@ def resolve_db_path(path: Path | None = None) -> Path:
 
 
 def _connect(path: Path | None = None) -> sqlite3.Connection:
-    conn = sqlite3.connect(resolve_db_path(path))
+    """Open the database, or fail clearly if it has not been seeded.
+
+    sqlite3.connect() silently creates an empty file when the path is missing,
+    which then fails later with "no such table". Check first so nothing is created.
+    """
+    db_path = resolve_db_path(path)
+    if not db_path.exists():
+        raise FileNotFoundError(f"Database not found at {db_path}. Build it with: python seed_db.py")
+    conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -56,13 +65,13 @@ def load_leases(
     if clauses:
         sql += " WHERE " + " AND ".join(clauses)
 
-    with _connect(path) as conn:
+    with closing(_connect(path)) as conn:
         return [_row_to_dict(row) for row in conn.execute(sql, params)]
 
 
 def get_lease_by_id(lease_id: str, path: Path | None = None) -> dict | None:
     sql = SELECT_LEASES + " WHERE lease_id = ?"
-    with _connect(path) as conn:
+    with closing(_connect(path)) as conn:
         row = conn.execute(sql, (lease_id,)).fetchone()
     return _row_to_dict(row) if row else None
 
@@ -84,6 +93,6 @@ def query_expiring_leases(today: date, days: int, path: Path | None = None) -> l
     """Leases whose expiry falls in [today, today + days], compared in SQL."""
     end = today + timedelta(days=days)
     sql = SELECT_LEASES + " WHERE expires >= ? AND expires <= ? ORDER BY expires ASC"
-    with _connect(path) as conn:
+    with closing(_connect(path)) as conn:
         rows = conn.execute(sql, (today.isoformat(), end.isoformat()))
         return [_row_to_dict(row) for row in rows]

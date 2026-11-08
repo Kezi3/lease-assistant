@@ -5,12 +5,19 @@ Run:  uvicorn api:app --reload      then open http://127.0.0.1:8000/docs
 from datetime import date
 from typing import Literal
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from leases import get_lease_by_id, load_leases, query_expiring_leases
 
 app = FastAPI(title="Lease Assistant API", version="0.2.0")
+
+
+@app.exception_handler(FileNotFoundError)
+def database_missing(request: Request, exc: FileNotFoundError):
+    """A missing database is a setup problem, not a crash: say how to fix it."""
+    return JSONResponse(status_code=503, content={"detail": str(exc)})
 
 
 class LeaseRecord(BaseModel):
