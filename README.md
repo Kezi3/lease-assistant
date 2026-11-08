@@ -6,9 +6,11 @@ An AI query assistant over lease records. Ask a question in plain English, for e
 
 ## Data
 
-All 40 records in `data/leases.json` are invented. No real tenants, properties or rents are used. Each record has `lease_id`, `property`, `tenant`, `expires`, `rent_ngn`, `property_type` and `status`.
+All 40 records in `data/leases.json` are invented. No real tenants, properties or rents are used. Each stored record has `lease_id`, `property`, `tenant`, `expires`, `rent_ngn` and `property_type`.
 
-The expiry dates are deliberately spread: some already expired, some inside the next 90 days (including a lease expiring today and one on the last day of the window), some a few months out, and some years out. Statuses are a snapshot as of 4 Nov 2026.
+**Status is not stored.** Every lease you read also has a `status`, but it is worked out from `expires` and today's date each time: a lease is `expired` once its expiry date is before today, and a lease expiring today is still `active`. An earlier version stored it, and the stored value went stale the day after it was written (L-004 stayed "active" after it expired). The API and the assistant accept an optional `today` so results are repeatable in tests.
+
+The expiry dates are deliberately spread around 4 Nov 2026, the date the tests use: some already expired, some inside the next 90 days (including a lease expiring on 4 Nov and one on the last day of the window), some a few months out, and some years out.
 
 `data/leases.json` stays in the repo as the seed source. Build (or rebuild) the SQLite database with:
 
@@ -16,7 +18,7 @@ The expiry dates are deliberately spread: some already expired, some inside the 
 python seed_db.py
 ```
 
-That writes `data/leases.db` (gitignored). Running the script twice drops and recreates the table so the database matches the JSON. The API and `load_leases()` read this database, not the JSON file directly. Tests seed a temporary `.db` and never use a committed database.
+That writes `data/leases.db` (gitignored). Running the script twice drops and recreates the table so the database matches the JSON. The API and `load_leases()` read this database, not the JSON file directly. If you built the database before status was derived, it still works (the old stored column is ignored), but run `python seed_db.py` once to rebuild it cleanly. Tests seed a temporary `.db` and never use a committed database.
 
 To keep the database somewhere else, set `LEASES_DB` to a file path; both `seed_db.py` and the API honour it. If the database has not been built, the API answers `503` with the message "Build it with: python seed_db.py" instead of crashing.
 
@@ -51,6 +53,7 @@ Design decisions to know about:
 
 - **Date windows are calculated in code.** Claude passes `days` or an `end_date`; `leases.query_expiring_leases` does the arithmetic. Claude is told never to work out a window itself, which fixes the earlier problem of the model's own date arithmetic varying between runs.
 - **Claude's arguments are untrusted.** `run_tool` validates every argument. A bad argument or unknown lease id goes back to Claude as an error result so it can correct itself. A broken setup (for example a missing database) crashes loudly instead, because Claude cannot fix that.
+- **"Before" and "by" are different, and `end_date` is inclusive.** `expiring_leases` includes a lease expiring on `end_date` itself. So "by 31 January" passes `2027-01-31`, and "before 31 January" passes `2027-01-30`. This rule is written into the tool description, the parameter description and the system prompt, and tests check that the two readings differ by exactly the lease expiring on 31 January.
 - **Tools only read.** There is no tool that changes data.
 
 ## Ask a question (older CLI)
@@ -71,8 +74,8 @@ Open http://127.0.0.1:8000/docs to try the endpoints.
 
 | Endpoint | What it returns |
 |---|---|
-| `GET /leases` | All leases. Optional filters: `status` (`active`, `expired`) and `property_type` (`residential`, `commercial`). |
-| `GET /leases/{lease_id}` | One lease, or 404. |
+| `GET /leases` | All leases. Optional filters: `status` (`active`, `expired`) and `property_type` (`residential`, `commercial`), plus `today=YYYY-MM-DD` to override the date status is worked out against. |
+| `GET /leases/{lease_id}` | One lease, or 404. Also accepts `today`. |
 | `GET /leases/expiring?days=90` | Leases expiring from today up to and including `days` days out, soonest first. `days` must be 1 to 3650. An optional `today=YYYY-MM-DD` overrides the date, for testing. |
 
 ## Test it

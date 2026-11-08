@@ -44,6 +44,8 @@ TOOLS = [
             "List leases, optionally filtered by status and/or property type. "
             "Use this for questions about all leases, counts, rents, or expired leases. "
             "Do not use it for 'expiring soon' questions: use expiring_leases for those. "
+            "Status is worked out from the expiry date and today: 'expired' means the expiry date is "
+            "before today, and a lease expiring today is still 'active'. "
             "Returns the count and every matching lease."
         ),
         "input_schema": {
@@ -70,8 +72,11 @@ TOOLS = [
         "name": "expiring_leases",
         "description": (
             "Leases whose expiry date falls from today up to and including the end of a window. "
-            "Give exactly one of: 'days' (for 'in the next N days') or 'end_date' "
-            "(for 'before/by a date'). The window is calculated in code, so never work it out yourself. "
+            "Give exactly one of: 'days' (for 'in the next N days') or 'end_date' (for a date). "
+            "end_date is INCLUSIVE: a lease expiring on end_date itself is included. "
+            "So for 'by', 'until', 'through' or 'on or before' a date, pass that date; "
+            "for 'before' a date, pass the day BEFORE it (for 'before 31 January 2027' pass 2027-01-30). "
+            "The window is calculated in code, so never work it out yourself. "
             "Returns the window dates, the count, and the leases soonest first. "
             "Leases that have already expired are not included."
         ),
@@ -79,7 +84,10 @@ TOOLS = [
             "type": "object",
             "properties": {
                 "days": {"type": "integer", "minimum": 0, "maximum": 3650, "description": "Window length in days from today."},
-                "end_date": {"type": "string", "description": "Last day of the window, as YYYY-MM-DD."},
+                "end_date": {
+                    "type": "string",
+                    "description": "Last day of the window, inclusive, as YYYY-MM-DD. For 'before X', pass the day before X.",
+                },
             },
         },
     },
@@ -109,6 +117,7 @@ def run_tool(name: str, args: dict, today: date) -> dict:
         rows = load_leases(
             status=_enum_arg(args, "status", STATUSES),
             property_type=_enum_arg(args, "property_type", PROPERTY_TYPES),
+            today=today,
         )
         return {"count": len(rows), "leases": rows}
 
@@ -116,7 +125,7 @@ def run_tool(name: str, args: dict, today: date) -> dict:
         lease_id = args.get("lease_id")
         if not isinstance(lease_id, str) or not lease_id.strip():
             raise ToolError("lease_id is required, for example 'L-001'.")
-        row = get_lease_by_id(lease_id.strip())
+        row = get_lease_by_id(lease_id.strip(), today=today)
         if row is None:
             raise ToolError(f"No lease with id {lease_id!r}. Lease ids look like 'L-001'.")
         return row
@@ -172,7 +181,8 @@ def system_prompt(today: date) -> str:
         "Rules:\n"
         "- Get every lease fact from the tools. Never guess and never rely on memory.\n"
         "- Never work out a date window yourself. For 'in the next N days' call expiring_leases "
-        "with days; for 'before' or 'by' a date call it with end_date.\n"
+        "with days. For a date call it with end_date, which is inclusive: 'by', 'until' or "
+        "'through' a date means that date, and 'before' a date means the day before it.\n"
         "- If the tools cannot answer the question, say so in the answer and return no lease ids.\n"
         "- When you are finished, reply with JSON only and no other text, shaped like "
         '{"answer": str, "lease_ids": [str]}. "answer" is a short plain-English answer that states '

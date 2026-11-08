@@ -25,10 +25,12 @@ def test_data_size_and_unique_ids():
     assert len({r["lease_id"] for r in rows}) == len(rows)
 
 
-def test_data_dates_are_valid_and_status_matches():
-    for row in load_leases():
-        expires = date.fromisoformat(row["expires"])
-        assert (row["status"] == "expired") == (expires < date(2026, 11, 4)), row["lease_id"]
+def test_status_is_derived_from_the_expiry_date_and_today():
+    """Status is never stored, so it follows whatever 'today' is. Expiring today is still active."""
+    for today in (date(2026, 11, 3), date(2026, 11, 4), date(2026, 11, 5), date(2027, 6, 1)):
+        for row in load_leases(today=today):
+            expected = "expired" if date.fromisoformat(row["expires"]) < today else "active"
+            assert row["status"] == expected, (today, row["lease_id"])
 
 
 def test_data_has_a_useful_spread():
@@ -49,10 +51,23 @@ def test_list_all():
 
 
 def test_list_filters():
-    expired = client.get("/leases", params={"status": "expired"}).json()
-    assert expired and all(r["status"] == "expired" for r in expired)
+    expired = client.get("/leases", params={"status": "expired", "today": "2026-11-04"}).json()
+    assert len(expired) == 5
+    assert all(r["status"] == "expired" and r["expires"] < "2026-11-04" for r in expired)
     commercial = client.get("/leases", params={"property_type": "commercial"}).json()
     assert commercial and all(r["property_type"] == "commercial" for r in commercial)
+
+
+def test_status_filter_follows_the_date_passed_in():
+    """The stored column used to leave L-004 'active' after it expired. Now the date decides."""
+    on_the_day = client.get("/leases", params={"status": "expired", "today": "2026-11-04"}).json()
+    next_day = client.get("/leases", params={"status": "expired", "today": "2026-11-05"}).json()
+    assert "L-004" not in {r["lease_id"] for r in on_the_day}  # expires 4 Nov: still active on 4 Nov
+    assert "L-004" in {r["lease_id"] for r in next_day}        # expired by 5 Nov
+    assert len(next_day) == len(on_the_day) + 1
+    active_next_day = client.get("/leases", params={"status": "active", "today": "2026-11-05"}).json()
+    assert len(active_next_day) + len(next_day) == len(load_leases())
+    assert "L-004" not in {r["lease_id"] for r in active_next_day}
 
 
 def test_list_rejects_unknown_filter_value():
@@ -65,6 +80,11 @@ def test_get_one():
     body = res.json()
     assert body["property"] == "Unit A, Wuse 2"
     assert body["expires"] == "2026-12-15"
+
+
+def test_get_one_status_follows_the_date_passed_in():
+    assert client.get("/leases/L-004", params={"today": "2026-11-04"}).json()["status"] == "active"
+    assert client.get("/leases/L-004", params={"today": "2026-11-05"}).json()["status"] == "expired"
 
 
 def test_get_missing_returns_404():

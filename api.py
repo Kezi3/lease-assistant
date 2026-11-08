@@ -30,20 +30,29 @@ class LeaseRecord(BaseModel):
     status: Literal["active", "expired"]
 
 
+TODAY_PARAM = Query(None, description="Override today's date (YYYY-MM-DD), for testing")
+
+
 @app.get("/leases", response_model=list[LeaseRecord])
 def list_leases(
     status: Literal["active", "expired"] | None = None,
     property_type: Literal["residential", "commercial"] | None = None,
+    today: date | None = TODAY_PARAM,
 ):
-    """All leases, optionally filtered by status and/or property type."""
-    return [LeaseRecord(**row) for row in load_leases(status=status, property_type=property_type)]
+    """All leases, optionally filtered by status and/or property type.
+
+    `status` is worked out from the expiry date and today, not stored: a lease is
+    `expired` once its expiry date is before today.
+    """
+    rows = load_leases(status=status, property_type=property_type, today=today)
+    return [LeaseRecord(**row) for row in rows]
 
 
 # Declared before /leases/{lease_id} so "expiring" is not read as a lease id.
 @app.get("/leases/expiring", response_model=list[LeaseRecord])
 def expiring_leases(
     days: int = Query(90, ge=1, le=3650, description="Window length in days, counted from today"),
-    today: date | None = Query(None, description="Override today's date (YYYY-MM-DD), for testing"),
+    today: date | None = TODAY_PARAM,
 ):
     """Leases expiring from today up to and including `days` days from today, soonest first."""
     rows = query_expiring_leases(today or date.today(), days)
@@ -51,8 +60,8 @@ def expiring_leases(
 
 
 @app.get("/leases/{lease_id}", response_model=LeaseRecord)
-def get_lease(lease_id: str):
-    row = get_lease_by_id(lease_id)
+def get_lease(lease_id: str, today: date | None = TODAY_PARAM):
+    row = get_lease_by_id(lease_id, today=today)
     if row is None:
         raise HTTPException(status_code=404, detail=f"Lease {lease_id} not found")
     return LeaseRecord(**row)

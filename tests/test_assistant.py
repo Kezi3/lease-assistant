@@ -8,7 +8,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from assistant import TOOLS, ToolError, ask_with_tools, run_tool  # noqa: E402
+from assistant import TOOLS, ToolError, ask_with_tools, run_tool, system_prompt  # noqa: E402
 
 TODAY = date(2026, 11, 4)
 # Leases expiring from 2026-11-04 up to and including 2027-02-02 (90 days).
@@ -239,6 +239,56 @@ def test_end_date_of_today_is_a_zero_day_window():
     result = run_tool("expiring_leases", {"end_date": "2026-11-04"}, TODAY)
     assert result["window"] == {"from": "2026-11-04", "to": "2026-11-04"}
     assert ids(result) == {"L-004"}  # the only lease expiring today
+
+
+# ---- 'before' versus 'by', and status that follows today's date ----
+
+def test_end_date_is_inclusive_so_by_and_before_differ_by_exactly_one_lease():
+    """'By 31 Jan 2027' includes L-007 (expires 31 Jan). 'Before 31 Jan' means end_date 30 Jan, which does not."""
+    by = run_tool("expiring_leases", {"end_date": "2027-01-31"}, TODAY)
+    before = run_tool("expiring_leases", {"end_date": "2027-01-30"}, TODAY)
+    assert ids(by) - ids(before) == {"L-007"}
+    assert ids(before) <= ids(by)
+    assert (before["window"]["to"], by["window"]["to"]) == ("2027-01-30", "2027-01-31")
+
+
+def test_the_model_is_told_the_before_and_by_rule_in_both_places():
+    expiring = next(t for t in TOOLS if t["name"] == "expiring_leases")
+    assert "INCLUSIVE" in expiring["description"]
+    assert "day BEFORE" in expiring["description"]
+    assert "2027-01-30" in expiring["description"]  # the worked example
+    assert "inclusive" in expiring["input_schema"]["properties"]["end_date"]["description"]
+    rules = system_prompt(TODAY)
+    assert "inclusive" in rules and "'before' a date means the day before it" in rules
+
+
+def test_the_model_is_told_how_status_is_decided():
+    listing = next(t for t in TOOLS if t["name"] == "list_leases")["description"]
+    assert "before today" in listing and "expiring today is still 'active'" in listing
+
+
+def test_list_leases_status_follows_today():
+    on_the_day = run_tool("list_leases", {"status": "expired"}, date(2026, 11, 4))
+    next_day = run_tool("list_leases", {"status": "expired"}, date(2026, 11, 5))
+    assert "L-004" not in ids(on_the_day) and "L-004" in ids(next_day)
+    assert next_day["count"] == on_the_day["count"] + 1
+    active = run_tool("list_leases", {"status": "active", "property_type": "residential"}, date(2026, 11, 5))
+    assert "L-004" not in ids(active)
+    assert all(lease["status"] == "active" for lease in active["leases"])
+
+
+def test_get_lease_status_follows_today():
+    assert run_tool("get_lease", {"lease_id": "L-004"}, date(2026, 11, 4))["status"] == "active"
+    assert run_tool("get_lease", {"lease_id": "L-004"}, date(2026, 11, 5))["status"] == "expired"
+
+
+def test_loop_passes_its_date_to_the_status_filter():
+    client = ScriptedClient(
+        tool_reply(tool_use("toolu_1", "list_leases", {"status": "expired"})),
+        text_reply(FINAL),
+    )
+    result = ask_with_tools("q", today=date(2026, 11, 5), client=client)
+    assert result.tool_calls[0].output["count"] == 6  # the 5 expired by 4 Nov, plus L-004
 
 
 # ---- the command line ----

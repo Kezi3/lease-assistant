@@ -21,8 +21,10 @@ LEASE_COLUMNS = (
     "expires",
     "rent_ngn",
     "property_type",
-    "status",
 )
+# There is deliberately no stored "status". Whether a lease is active or expired depends on
+# today's date, so leases.py works it out from `expires` on every read. A stored column went
+# stale the day after it was written (L-004 stayed "active" after it expired).
 
 CREATE_TABLE_SQL = """
 CREATE TABLE leases (
@@ -31,15 +33,14 @@ CREATE TABLE leases (
     tenant TEXT NOT NULL,
     expires TEXT NOT NULL,
     rent_ngn INTEGER NOT NULL,
-    property_type TEXT NOT NULL,
-    status TEXT NOT NULL
+    property_type TEXT NOT NULL
 )
 """
 
 INSERT_SQL = """
 INSERT INTO leases (
-    lease_id, property, tenant, expires, rent_ngn, property_type, status
-) VALUES (?, ?, ?, ?, ?, ?, ?)
+    lease_id, property, tenant, expires, rent_ngn, property_type
+) VALUES (?, ?, ?, ?, ?, ?)
 """
 
 

@@ -37,7 +37,7 @@ def ask(question: str, today: date | None = None, client: Anthropic | None = Non
     today = today or date.today()
     client = client or Anthropic()
     prompt = (
-        f"Today is {today.isoformat()}. Here are the leases: {json.dumps(load_leases())}\n"
+        f"Today is {today.isoformat()}. Here are the leases: {json.dumps(load_leases(today=today))}\n"
         f"Question: {question}\n"
         'Reply with JSON only, shaped like {"answer": str, "leases": [{"property": str, "tenant": str, "expires": str}]}.'
     )

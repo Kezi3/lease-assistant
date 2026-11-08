@@ -5,8 +5,7 @@
     "tenant": "Tenant 1",
     "expires": "2026-12-15",
     "rent_ngn": 5200000,
-    "property_type": "residential",
-    "status": "active"
+    "property_type": "residential"
   },
   {
     "lease_id": "L-002",
@@ -14,8 +13,7 @@
     "tenant": "Tenant 2",
     "expires": "2027-06-30",
     "rent_ngn": 13300000,
-    "property_type": "commercial",
-    "status": "active"
+    "property_type": "commercial"
   },
   {
     "lease_id": "L-003",
@@ -23,8 +21,7 @@
     "tenant": "Tenant 3",
     "expires": "2027-01-10",
     "rent_ngn": 2200000,
-    "property_type": "residential",
-    "status": "active"
+    "property_type": "residential"
   },
   {
     "lease_id": "L-004",
@@ -32,8 +29,7 @@
     "tenant": "Tenant 4",
     "expires": "2026-11-04",
     "rent_ngn": 3500000,
-    "property_type": "residential",
-    "status": "active"
+    "property_type": "residential"
   },
   {
     "lease_id": "L-005",
@@ -41,8 +37,7 @@
     "tenant": "Tenant 5",
     "expires": "2027-11-30",
     "rent_ngn": 3400000,
-    "property_type": "residential",
-    "status": "active"
+    "property_type": "residential"
   },
   {
     "lease_id": "L-006",
@@ -50,8 +45,7 @@
     "tenant": "Tenant 6",
     "expires": "2027-03-15",
     "rent_ngn": 2500000,
-    "property_type": "residential",
-    "status": "active"
+    "property_type": "residential"
   },
   {
     "lease_id": "L-007",
@@ -59,8 +53,7 @@
     "tenant": "Tenant 7",
     "expires": "2027-01-31",
     "rent_ngn": 5400000,
-    "property_type": "residential",
-    "status": "active"
+    "property_type": "residential"
   },
   {
     "lease_id": "L-008",
@@ -68,8 +61,7 @@
     "tenant": "Tenant 8",
     "expires": "2028-01-31",
     "rent_ngn": 2900000,
-    "property_type": "residential",
-    "status": "active"
+    "property_type": "residential"
   },
   {
     "lease_id": "L-009",
@@ -77,8 +69,7 @@
     "tenant": "Tenant 9",
     "expires": "2028-05-31",
     "rent_ngn": 5600000,
-    "property_type": "residential",
-    "status": "active"
+    "property_type": "residential"
   },
   {
     "lease_id": "L-010",
@@ -86,8 +77,7 @@
     "tenant": "Tenant 10",
     "expires": "2028-06-30",
     "rent_ngn": 5500000,
-    "property_type": "residential",
-    "status": "active"
+    "property_type": "residential"
   },
   {
     "lease_id": "L-011",
@@ -95,8 +85,7 @@
     "tenant": "Tenant 11",
     "expires": "2026-11-03",
     "rent_ngn": 5300000,
-    "property_type": "residential",
-    "status": "expired"
+    "property_type": "residential"
   },
   {
     "lease_id": "L-012",
@@ -104,8 +93,7 @@
     "tenant": "Tenant 12",
     "expires": "2028-03-31",
     "rent_ngn": 1600000,
-    "property_type": "residential",
-    "status": "active"
+    "property_type": "residential"
   },
   {
     "lease_id": "L-013",
@@ -113,8 +101,7 @@
     "tenant": "Tenant 13",
     "expires": "2028-08-31",
     "rent_ngn": 8300000,
-    "property_type": "commercial",
-    "status": "active"
+    "property_type": "commercial"
   },
   {
     "lease_id": "L-014",
@@ -122,8 +109,7 @@
     "tenant": "Tenant 14",
     "expires": "2029-01-31",
     "rent_ngn": 4600000,
-    "property_type": "residential",
-    "status": "active"
+    "property_type": "residential"
   },
   {
     "lease_id": "L-015",
@@ -131,8 +117,7 @@
     "tenant": "Tenant 15",
     "expires": "2028-10-31",
     "rent_ngn": 5800000,
-    "property_type": "residential",
-    "status": "active"
+    "property_type": "residential"
   },
   {
     "lease_id": "L-016",
@@ -140,8 +125,7 @@
     "tenant": "Tenant 16",
     "expires": "2028-12-15",
     "rent_ngn": 10200000,
-    "property_type": "commercial",
-    "status": "active"
+    "property_type": "commercial"
   },
   {
     "lease_id": "L-017",
@@ -149,8 +133,7 @@
     "tenant": "Tenant 17",
     "expires": "2027-02-02",
     "rent_ngn": 2200000,
-    "property_type": "residential",
-    "status": "active"
+    "property_type": "residential"
   },
   {
     "lease_id": "L-018",
@@ -158,8 +141,7 @@
     "tenant": "Tenant 18",
     "expires": "2027-02-03",
     "rent_ngn": 15800000,
-    "property_type": "commercial",
-    "status": "active"
+    "property_type": "commercial"
   },
   {
     "lease_id": "L-019",
@@ -167,8 +149,7 @@
     "tenant": "Tenant 19",
     "expires": "2027-10-31",
     "rent_ngn": 3600000,
-    "property_type": "residential",
-    "status": "active"
+    "property_type": "residential"
   },
   {
     "lease_id": "L-020",
@@ -176,8 +157,7 @@
     "tenant": "Tenant 20",
     "expires": "2028-07-31",
     "rent_ngn": 2900000,
-    "property_type": "residential",
-    "status": "active"
+    "property_type": "residential"
   },
   {
     "lease_id": "L-021",
@@ -185,8 +165,7 @@
     "tenant": "Tenant 21",
     "expires": "2027-08-31",
     "rent_ngn": 5200000,
-    "property_type": "residential",
-    "status": "active"
+    "property_type": "residential"
   },
   {
     "lease_id": "L-022",
@@ -194,8 +173,7 @@
     "tenant": "Tenant 22",
     "expires": "2029-09-30",
     "rent_ngn": 9600000,
-    "property_type": "commercial",
-    "status": "active"
+    "property_type": "commercial"
   },
   {
     "lease_id": "L-023",
@@ -203,8 +181,7 @@
     "tenant": "Tenant 23",
     "expires": "2026-11-20",
     "rent_ngn": 5500000,
-    "property_type": "residential",
-    "status": "active"
+    "property_type": "residential"
   },
   {
     "lease_id": "L-024",
@@ -212,8 +189,7 @@
     "tenant": "Tenant 24",
     "expires": "2028-04-30",
     "rent_ngn": 12300000,
-    "property_type": "commercial",
-    "status": "active"
+    "property_type": "commercial"
   },
   {
     "lease_id": "L-025",
@@ -221,8 +197,7 @@
     "tenant": "Tenant 25",
     "expires": "2026-03-31",
     "rent_ngn": 5400000,
-    "property_type": "commercial",
-    "status": "expired"
+    "property_type": "commercial"
   },
   {
     "lease_id": "L-026",
@@ -230,8 +205,7 @@
     "tenant": "Tenant 26",
     "expires": "2029-06-30",
     "rent_ngn": 2600000,
-    "property_type": "residential",
-    "status": "active"
+    "property_type": "residential"
   },
   {
     "lease_id": "L-027",
@@ -239,8 +213,7 @@
     "tenant": "Tenant 27",
     "expires": "2027-04-30",
     "rent_ngn": 4800000,
-    "property_type": "commercial",
-    "status": "active"
+    "property_type": "commercial"
   },
   {
     "lease_id": "L-028",
@@ -248,8 +221,7 @@
     "tenant": "Tenant 28",
     "expires": "2027-10-15",
     "rent_ngn": 3200000,
-    "property_type": "residential",
-    "status": "active"
+    "property_type": "residential"
   },
   {
     "lease_id": "L-029",
@@ -257,8 +229,7 @@
     "tenant": "Tenant 29",
     "expires": "2026-08-15",
     "rent_ngn": 14200000,
-    "property_type": "commercial",
-    "status": "expired"
+    "property_type": "commercial"
   },
   {
     "lease_id": "L-030",
@@ -266,8 +237,7 @@
     "tenant": "Tenant 30",
     "expires": "2029-03-31",
     "rent_ngn": 2900000,
-    "property_type": "residential",
-    "status": "active"
+    "property_type": "residential"
   },
   {
     "lease_id": "L-031",
@@ -275,8 +245,7 @@
     "tenant": "Tenant 31",
     "expires": "2028-09-30",
     "rent_ngn": 1600000,
-    "property_type": "residential",
-    "status": "active"
+    "property_type": "residential"
   },
   {
     "lease_id": "L-032",
@@ -284,8 +253,7 @@
     "tenant": "Tenant 32",
     "expires": "2027-12-31",
     "rent_ngn": 9400000,
-    "property_type": "commercial",
-    "status": "active"
+    "property_type": "commercial"
   },
   {
     "lease_id": "L-033",
@@ -293,8 +261,7 @@
     "tenant": "Tenant 33",
     "expires": "2026-10-01",
     "rent_ngn": 4800000,
-    "property_type": "residential",
-    "status": "expired"
+    "property_type": "residential"
   },
   {
     "lease_id": "L-034",
@@ -302,8 +269,7 @@
     "tenant": "Tenant 34",
     "expires": "2028-02-29",
     "rent_ngn": 5700000,
-    "property_type": "residential",
-    "status": "active"
+    "property_type": "residential"
   },
   {
     "lease_id": "L-035",
@@ -311,8 +277,7 @@
     "tenant": "Tenant 35",
     "expires": "2026-12-31",
     "rent_ngn": 3200000,
-    "property_type": "residential",
-    "status": "active"
+    "property_type": "residential"
   },
   {
     "lease_id": "L-036",
@@ -320,8 +285,7 @@
     "tenant": "Tenant 36",
     "expires": "2027-05-31",
     "rent_ngn": 2500000,
-    "property_type": "residential",
-    "status": "active"
+    "property_type": "residential"
   },
   {
     "lease_id": "L-037",
@@ -329,8 +293,7 @@
     "tenant": "Tenant 37",
     "expires": "2027-07-31",
     "rent_ngn": 5300000,
-    "property_type": "residential",
-    "status": "active"
+    "property_type": "residential"
   },
   {
     "lease_id": "L-038",
@@ -338,8 +301,7 @@
     "tenant": "Tenant 38",
     "expires": "2027-09-30",
     "rent_ngn": 4300000,
-    "property_type": "residential",
-    "status": "active"
+    "property_type": "residential"
   },
   {
     "lease_id": "L-039",
@@ -347,8 +309,7 @@
     "tenant": "Tenant 39",
     "expires": "2026-06-30",
     "rent_ngn": 3700000,
-    "property_type": "residential",
-    "status": "expired"
+    "property_type": "residential"
   },
   {
     "lease_id": "L-040",
@@ -356,7 +317,6 @@
     "tenant": "Tenant 40",
     "expires": "2026-11-30",
     "rent_ngn": 5300000,
-    "property_type": "residential",
-    "status": "active"
+    "property_type": "residential"
   }
 ]

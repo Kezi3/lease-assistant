@@ -24,11 +24,74 @@ def test_database_holds_all_seed_rows():
 
 
 def test_sql_filters_match_python_filters():
-    rows = load_leases()
-    assert load_leases(status="expired") == [r for r in rows if r["status"] == "expired"]
-    assert load_leases(property_type="commercial") == [r for r in rows if r["property_type"] == "commercial"]
-    both = load_leases(status="active", property_type="residential")
-    assert both == [r for r in rows if r["status"] == "active" and r["property_type"] == "residential"]
+    """Expectations come from the raw expiry dates, not from the derived status being tested."""
+    rows = load_leases(today=TODAY)
+    iso = TODAY.isoformat()
+    assert load_leases(status="expired", today=TODAY) == [r for r in rows if r["expires"] < iso]
+    assert load_leases(status="active", today=TODAY) == [r for r in rows if r["expires"] >= iso]
+    assert load_leases(property_type="commercial", today=TODAY) == [
+        r for r in rows if r["property_type"] == "commercial"
+    ]
+    both = load_leases(status="active", property_type="residential", today=TODAY)
+    assert both == [r for r in rows if r["expires"] >= iso and r["property_type"] == "residential"]
+
+
+def test_expired_and_active_partition_the_leases():
+    for offset in (-100, 0, 1, 30, 200, 1000):
+        today = TODAY + timedelta(days=offset)
+        expired = {r["lease_id"] for r in load_leases(status="expired", today=today)}
+        active = {r["lease_id"] for r in load_leases(status="active", today=today)}
+        assert not expired & active
+        assert len(expired) + len(active) == 40
+
+
+def test_a_lease_expiring_today_is_active_and_yesterdays_is_expired():
+    assert get_lease_by_id("L-004", today=date(2026, 11, 4))["status"] == "active"
+    assert get_lease_by_id("L-004", today=date(2026, 11, 5))["status"] == "expired"
+    assert get_lease_by_id("L-011", today=date(2026, 11, 4))["status"] == "expired"  # expired 3 Nov
+
+
+def test_every_read_path_returns_a_derived_status():
+    today = date(2026, 11, 5)
+    assert {r["status"] for r in load_leases(today=today)} == {"active", "expired"}
+    assert get_lease_by_id("L-004", today=today)["status"] == "expired"
+    assert {r["status"] for r in query_expiring_leases(today, 90)} == {"active"}
+
+
+def test_status_is_not_stored_in_the_database():
+    import sqlite3
+    from contextlib import closing
+
+    from leases import resolve_db_path
+
+    with closing(sqlite3.connect(resolve_db_path())) as conn:
+        columns = [row[1] for row in conn.execute("PRAGMA table_info(leases)")]
+    assert "status" not in columns
+
+
+def test_a_database_built_before_this_change_still_works(tmp_path):
+    """Existing databases still have the old stale status column. It must be ignored, not trusted."""
+    import sqlite3
+    from contextlib import closing
+
+    old = tmp_path / "old.db"
+    with closing(sqlite3.connect(old)) as conn, conn:
+        conn.execute(
+            "CREATE TABLE leases (lease_id TEXT PRIMARY KEY, property TEXT, tenant TEXT, expires TEXT, "
+            "rent_ngn INTEGER, property_type TEXT, status TEXT)"
+        )
+        conn.execute(
+            "INSERT INTO leases VALUES ('L-004', 'Unit 4, Gwarinpa', 'Tenant 4', '2026-11-04', 3500000, "
+            "'residential', 'active')"  # stored 'active', but long past expiry by the date used below
+        )
+    row = load_leases(old, today=date(2026, 11, 8))[0]
+    assert row["status"] == "expired"
+    assert [r["lease_id"] for r in load_leases(old, status="expired", today=date(2026, 11, 8))] == ["L-004"]
+
+
+def test_unknown_status_is_rejected():
+    with pytest.raises(ValueError, match="status must be"):
+        load_leases(status="pending", today=TODAY)
 
 
 @pytest.mark.parametrize("days", [1, 30, 90, 180, 365, 3650])
